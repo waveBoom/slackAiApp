@@ -15,6 +15,7 @@ from app.gpt import get_answer_from_chatGPT, get_answer_from_llama_file, get_ans
 from app.rate_limiter import RateLimiter
 from app.user import get_user, is_premium_user, is_active_user, update_message_token_usage
 from app.util import md5
+from app.slash_command import register_slack_slash_commands
 
 class Config:
     SCHEDULER_API_ENABLED = True
@@ -24,6 +25,9 @@ executor = concurrent.futures.ThreadPoolExecutor(max_workers=20)
 schedule_channel = "#daily-news"
 
 app = Flask(__name__)
+app.logger.setLevel(logging.DEBUG)
+
+logging.basicConfig(level=logging.INFO)
 
 slack_app = App(
     token=os.environ.get("SLACK_TOKEN"),
@@ -31,13 +35,17 @@ slack_app = App(
     raise_error_for_unhandled_request=True
 )
 slack_handler = SlackRequestHandler(slack_app)
+register_slack_slash_commands(slack_app)
+
 
 @slack_app.error
 def handle_errors(error):
+    logging.error(f"slack_app.error: {error}")
     if isinstance(error, BoltUnhandledRequestError):
         return BoltResponse(status=200, body="")
     else:
         return BoltResponse(status=500, body="Something Wrong")
+
 
 scheduler = APScheduler()
 scheduler.api_enabled = True
@@ -245,14 +253,15 @@ def bot_process(event, say, logger):
         err_msg = 'Task timedout(5m) and was canceled.'
         logger.warning(err_msg)
         say(f'<@{user}>, {err_msg}', thread_ts=thread_ts)
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        say(f'<@{user}>, {e}', thread_ts=thread_ts)
 
 @slack_app.event("app_mention")
 def handle_mentions(event, say, logger):
     logger.info(event)
-
     user = event["user"]
     thread_ts = event["ts"]
-
     if not is_active_user(user):
         say(f'<@{user}>, 你的账户未激活，请微信联系 `improve365_cn` 管理员激活你的账户后再试用。', thread_ts=thread_ts)
         return
@@ -263,7 +272,7 @@ def handle_mentions(event, say, logger):
             return
     
     bot_process(event, say, logger)
-    
+
 
 def bot_messages(message, next):
     logging.info(message)

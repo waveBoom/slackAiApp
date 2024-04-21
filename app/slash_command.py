@@ -1,7 +1,8 @@
 import json
 
-with open("app/data/prompt.json", "r") as f:
+with open("data/prompt.json", "r") as f:
     prompt_data = json.load(f)
+
 
 def register_slack_slash_commands(slack_app):
     slack_app.command("/gpt-as-novelist")(handle_command_gpt_as_novelist)
@@ -22,8 +23,10 @@ def register_slack_slash_commands(slack_app):
     slack_app.command("/gpt-as-fullstack-dev")(handle_command_gpt_as_fullstack_dev)
     slack_app.command("/gpt-as-regex-master")(handle_command_gpt_as_regex_master)
 
+
 def get_command_name(command):
     return command["command"].replace("/", "")
+
 
 def build_prompt_blocks(prompt_key):
     return [
@@ -54,6 +57,7 @@ def build_prompt_blocks(prompt_key):
         },
     ]
 
+
 def handle_command_gpt_as_novelist(ack, say, command):
     ack()
     channel_id = command["channel_id"]
@@ -64,7 +68,8 @@ def handle_command_gpt_as_novelist(ack, say, command):
         text=f"<@{user_id}>, let's talk!",
         blocks=blocks,
         reply_broadcast=True
-    )
+        )
+
 
 def handle_command_gpt_as_terminal(ack, say, command):
     ack()
@@ -76,7 +81,8 @@ def handle_command_gpt_as_terminal(ack, say, command):
         text=f"<@{user_id}>, let's talk!",
         blocks=blocks,
         reply_broadcast=True
-    )
+        )
+
 
 def handle_command_gpt_as_en_translator(ack, say, command):
     ack()
@@ -88,7 +94,8 @@ def handle_command_gpt_as_en_translator(ack, say, command):
         text=f"<@{user_id}>, let's talk!",
         blocks=blocks,
         reply_broadcast=True
-    )
+        )
+
 
 def handle_command_gpt_as_en_dict(ack, say, command):
     ack()
@@ -100,7 +107,8 @@ def handle_command_gpt_as_en_dict(ack, say, command):
         text=f"<@{user_id}>, let's talk!",
         blocks=blocks,
         reply_broadcast=True
-    )
+        )
+
 
 def handle_command_gpt_as_interviewer(ack, say, command):
     ack()
@@ -112,7 +120,8 @@ def handle_command_gpt_as_interviewer(ack, say, command):
         text=f"<@{user_id}>, let's talk!",
         blocks=blocks,
         reply_broadcast=True
-    )
+        )
+
 
 def handle_command_gpt_as_js_console(ack, say, command):
     ack()
@@ -124,7 +133,8 @@ def handle_command_gpt_as_js_console(ack, say, command):
         text=f"<@{user_id}>, let's talk!",
         blocks=blocks,
         reply_broadcast=True
-    )
+        )
+
 
 def handle_command_gpt_as_travel_guide(ack, say, command):
     ack()
@@ -136,7 +146,8 @@ def handle_command_gpt_as_travel_guide(ack, say, command):
         text=f"<@{user_id}>, let's talk!",
         blocks=blocks,
         reply_broadcast=True
-    )
+        )
+
 
 def handle_command_gpt_as_story_teller(ack, say, command):
     ack()
@@ -148,7 +159,8 @@ def handle_command_gpt_as_story_teller(ack, say, command):
         text=f"<@{user_id}>, let's talk!",
         blocks=blocks,
         reply_broadcast=True
-    )
+        )
+
 
 def handle_command_gpt_as_math_teacher(ack, say, command):
     ack()
@@ -160,7 +172,8 @@ def handle_command_gpt_as_math_teacher(ack, say, command):
         text=f"<@{user_id}>, let's talk!",
         blocks=blocks,
         reply_broadcast=True
-    )
+        )
+
 
 def handle_command_gpt_as_ai_doctor(ack, say, command):
     ack()
@@ -172,7 +185,8 @@ def handle_command_gpt_as_ai_doctor(ack, say, command):
         text=f"<@{user_id}>, let's talk!",
         blocks=blocks,
         reply_broadcast=True
-    )
+        )
+
 
 def handle_command_gpt_as_financer(ack, say, command):
     ack()
@@ -184,7 +198,8 @@ def handle_command_gpt_as_financer(ack, say, command):
         text=f"<@{user_id}>, let's talk!",
         blocks=blocks,
         reply_broadcast=True
-    )
+        )
+
 
 def handle_command_gpt_as_investor(ack, say, command):
     ack()
@@ -196,7 +211,8 @@ def handle_command_gpt_as_investor(ack, say, command):
         text=f"<@{user_id}>, let's talk!",
         blocks=blocks,
         reply_broadcast=True
-    )
+        )
+
 
 def handle_command_gpt_as_encoverage_book(ack, say, command):
     ack()
@@ -208,7 +224,8 @@ def handle_command_gpt_as_encoverage_book(ack, say, command):
         text=f"<@{user_id}>, let's talk!",
         blocks=blocks,
         reply_broadcast=True
-    )
+        )
+
 
 def handle_command_gpt_as_text_gamer(ack, say, command):
     ack()
@@ -220,7 +237,8 @@ def handle_command_gpt_as_text_gamer(ack, say, command):
         text=f"<@{user_id}>, let's talk!",
         blocks=blocks,
         reply_broadcast=True
-    )
+        )
+
 
 def handle_command_gpt_as_it_architect(ack, say, command):
     ack()
@@ -232,7 +250,8 @@ def handle_command_gpt_as_it_architect(ack, say, command):
         text=f"<@{user_id}>, let's talk!",
         blocks=blocks,
         reply_broadcast=True
-    )
+        )
+
 
 def handle_command_gpt_as_fullstack_dev(ack, say, command):
     ack()
@@ -244,7 +263,8 @@ def handle_command_gpt_as_fullstack_dev(ack, say, command):
         text=f"<@{user_id}>, let's talk!",
         blocks=blocks,
         reply_broadcast=True
-    )
+        )
+
 
 def handle_command_gpt_as_regex_master(ack, say, command):
     ack()
@@ -256,4 +276,4 @@ def handle_command_gpt_as_regex_master(ack, say, command):
         text=f"<@{user_id}>, let's talk!",
         blocks=blocks,
         reply_broadcast=True
-    )
+        )

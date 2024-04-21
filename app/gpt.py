@@ -5,24 +5,27 @@ import hashlib
 import random
 import uuid
 import openai
+from dotenv import load_dotenv
 from pathlib import Path
 from llama_index import ServiceContext, GPTVectorStoreIndex, LLMPredictor, RssReader, SimpleDirectoryReader, StorageContext, load_index_from_storage
 from llama_index.readers.schema.base import Document
 from langchain.chat_models import ChatOpenAI
 from azure.cognitiveservices.speech import SpeechConfig, SpeechSynthesizer, ResultReason, CancellationReason, SpeechSynthesisOutputFormat
 from azure.cognitiveservices.speech.audio import AudioOutputConfig
+import whisper
 
 from app.fetch_web_post import get_urls, get_youtube_transcript, scrape_website, scrape_website_by_phantomjscloud
 from app.prompt import get_prompt_template
 from app.util import get_language_code, get_youtube_video_id
 
-OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
+# OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
 SPEECH_KEY = os.environ.get('SPEECH_KEY')
 SPEECH_REGION = os.environ.get('SPEECH_REGION')
-openai.api_key = OPENAI_API_KEY
+# openai.api_key = OPENAI_API_KEY
+load_dotenv()
 
 index_cache_web_dir = Path('/tmp/myGPTReader/cache_web/')
-index_cache_file_dir = Path('/data/myGPTReader/file/')
+index_cache_file_dir = Path('/Users/bobo/data/myGPTReader/file/')
 index_cache_voice_dir = Path('/tmp/myGPTReader/voice/')
 
 if not index_cache_web_dir.is_dir():
@@ -167,10 +170,22 @@ def get_answer_from_llama_file(messages, file):
     total_embedding_model_tokens = service_context.embed_model.last_token_usage
     return answer, total_llm_model_tokens, total_embedding_model_tokens
 
+
+model = whisper.load_model("base")
+
+
 def get_text_from_whisper(voice_file_path):
-    with open(voice_file_path, "rb") as f:
-        transcript = openai.Audio.transcribe("whisper-1", f)
-    return transcript.text
+    # with open(voice_file_path, "rb") as f:
+    #     transcript = openai.Audio.transcribe("whisper-1", f)
+    # return transcript.text    try:
+    transcription = model.transcribe(voice_file_path)
+    return transcription["text"]
+
+
+
+if __name__ == '__main__':
+    void = get_text_from_whisper("/Users/bobo/data/myGPTReader/file/351151565500eb50c477879104e9a7fc.webm")
+    print(void)
 
 lang_code_voice_map = {
     'zh': ['zh-CN-XiaoxiaoNeural', 'zh-CN-XiaohanNeural', 'zh-CN-YunxiNeural', 'zh-CN-YunyangNeural'],
