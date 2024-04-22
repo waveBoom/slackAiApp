@@ -255,7 +255,7 @@ def bot_process(event, say, logger):
         say(f'<@{user}>, {err_msg}', thread_ts=thread_ts)
     except Exception as e:
         print(f"An error occurred: {e}")
-        say(f'<@{user}>, {e}', thread_ts=thread_ts)
+        say(f'<@{user}>, {"内容被马斯克发到火星了,请查看发射日志😂"}', thread_ts=thread_ts)
 
 @slack_app.event("app_mention")
 def handle_mentions(event, say, logger):

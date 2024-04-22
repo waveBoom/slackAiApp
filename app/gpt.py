@@ -38,7 +38,7 @@ if not index_cache_file_dir.is_dir():
     index_cache_file_dir.mkdir(parents=True, exist_ok=True)
 
 llm_predictor = LLMPredictor(llm=ChatOpenAI(
-    temperature=0, model_name="gpt-3.5-turbo"))
+    temperature=0, model_name="gpt-4"))
 
 service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
 
@@ -112,7 +112,7 @@ def get_answer_from_chatGPT(messages):
     logging.info('=====> Use chatGPT to answer!')
     logging.info(dialog_messages)
     completion = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
+        model="gpt-4",
         messages=[{"role": "user", "content": dialog_messages}]
     )
     logging.info(completion.usage)
@@ -142,6 +142,7 @@ def get_answer_from_llama_web(messages, urls):
     logging.info('=====> text_qa_template')
     logging.info(prompt.prompt)
     answer = index.as_query_engine(text_qa_template=prompt).query(dialog_messages)
+    answer.response = remove_prompt_from_text(answer.response)
     total_llm_model_tokens = llm_predictor.last_token_usage
     total_embedding_model_tokens = service_context.embed_model.last_token_usage
     return answer, total_llm_model_tokens, total_embedding_model_tokens
@@ -175,11 +176,9 @@ model = whisper.load_model("base")
 
 
 def get_text_from_whisper(voice_file_path):
-    # with open(voice_file_path, "rb") as f:
-    #     transcript = openai.Audio.transcribe("whisper-1", f)
-    # return transcript.text    try:
-    transcription = model.transcribe(voice_file_path)
-    return transcription["text"]
+    with open(voice_file_path, "rb") as f:
+        transcript = openai.Audio.transcribe("whisper-1", f)
+    return transcript.text
 
 
 
