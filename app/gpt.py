@@ -18,11 +18,11 @@ from app.fetch_web_post import get_urls, get_youtube_transcript, scrape_website,
 from app.prompt import get_prompt_template
 from app.util import get_language_code, get_youtube_video_id
 
-# OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
+load_dotenv()
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
 SPEECH_KEY = os.environ.get('SPEECH_KEY')
 SPEECH_REGION = os.environ.get('SPEECH_REGION')
 # openai.api_key = OPENAI_API_KEY
-load_dotenv()
 
 index_cache_web_dir = Path('/tmp/myGPTReader/cache_web/')
 index_cache_file_dir = Path('/Users/bobo/data/myGPTReader/file/')
@@ -183,9 +183,6 @@ def get_text_from_whisper(voice_file_path):
 
 
 
-if __name__ == '__main__':
-    void = get_text_from_whisper("/Users/bobo/data/myGPTReader/file/351151565500eb50c477879104e9a7fc.webm")
-    print(void)
 
 lang_code_voice_map = {
     'zh': ['zh-CN-XiaoxiaoNeural', 'zh-CN-XiaohanNeural', 'zh-CN-YunxiNeural', 'zh-CN-YunyangNeural'],
@@ -233,3 +230,11 @@ def get_voice_file_from_text(text, voice_name=None):
             logging.error("Error details: {}".format(
                 cancellation_details.error_details))
     return file_name
+
+
+if __name__ == '__main__':
+    print("----- start tts -----")
+    # text = "臣密言：臣以险衅，夙遭闵凶。生孩六月，慈父见背；行年四岁，舅夺母志。祖母刘愍臣孤弱，躬亲抚养。臣少多疾病，九岁不行，零丁孤苦，至于成立。既无叔伯，终鲜兄弟，门衰祚薄，晚有儿息。外无期功强近之亲，内无应门五尺之僮"
+    text = "我与父亲不相见已二年余了,我最不能忘记的是他的背影。那年冬天,祖母死了,父亲的差使也交卸了,正是祸不单行的日子。我从北京到徐州打算跟着父亲奔丧回家"
+    get_voice_file_from_text(text)
+    print("----- end tts ------")
