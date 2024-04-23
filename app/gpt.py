@@ -1,4 +1,3 @@
-
 import os
 import logging
 import hashlib
@@ -7,10 +6,12 @@ import uuid
 import openai
 from dotenv import load_dotenv
 from pathlib import Path
-from llama_index import ServiceContext, GPTVectorStoreIndex, LLMPredictor, RssReader, SimpleDirectoryReader, StorageContext, load_index_from_storage
+from llama_index import ServiceContext, GPTVectorStoreIndex, LLMPredictor, RssReader, SimpleDirectoryReader, \
+    StorageContext, load_index_from_storage
 from llama_index.readers.schema.base import Document
 from langchain.chat_models import ChatOpenAI
-from azure.cognitiveservices.speech import SpeechConfig, SpeechSynthesizer, ResultReason, CancellationReason, SpeechSynthesisOutputFormat
+from azure.cognitiveservices.speech import SpeechConfig, SpeechSynthesizer, ResultReason, CancellationReason, \
+    SpeechSynthesisOutputFormat
 from azure.cognitiveservices.speech.audio import AudioOutputConfig
 import whisper
 
@@ -45,13 +46,16 @@ service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
 web_storage_context = StorageContext.from_defaults()
 file_storage_context = StorageContext.from_defaults()
 
+
 def get_unique_md5(urls):
     urls_str = ''.join(sorted(urls))
     hashed_str = hashlib.md5(urls_str.encode('utf-8')).hexdigest()
     return hashed_str
 
+
 def format_dialog_messages(messages):
     return "\n".join(messages)
+
 
 def get_document_from_youtube_id(video_id):
     if video_id is None:
@@ -61,8 +65,10 @@ def get_document_from_youtube_id(video_id):
         return None
     return Document(transcript)
 
+
 def remove_prompt_from_text(text):
     return text.replace('chatGPT:', '').strip()
+
 
 def get_documents_from_urls(urls):
     documents = []
@@ -86,6 +92,7 @@ def get_documents_from_urls(urls):
                 documents.append(Document(f"Can't get transcript from youtube video: {url}"))
     return documents
 
+
 def get_index_from_web_cache(name):
     try:
         index = load_index_from_storage(web_storage_context, index_id=name)
@@ -93,6 +100,7 @@ def get_index_from_web_cache(name):
         logging.error(e)
         return None
     return index
+
 
 def get_index_from_file_cache(name):
     try:
@@ -102,10 +110,12 @@ def get_index_from_file_cache(name):
         return None
     return index
 
+
 def get_index_name_from_file(file: str):
     file_md5_with_extension = str(Path(file).relative_to(index_cache_file_dir).name)
     file_md5 = file_md5_with_extension.split('.')[0]
     return file_md5
+
 
 def get_answer_from_chatGPT(messages):
     dialog_messages = format_dialog_messages(messages)
@@ -118,6 +128,7 @@ def get_answer_from_chatGPT(messages):
     logging.info(completion.usage)
     total_tokens = completion.usage.total_tokens
     return completion.choices[0].message.content, total_tokens, None
+
 
 def get_answer_from_llama_web(messages, urls):
     dialog_messages = format_dialog_messages(messages)
@@ -147,6 +158,7 @@ def get_answer_from_llama_web(messages, urls):
     total_embedding_model_tokens = service_context.embed_model.last_token_usage
     return answer, total_llm_model_tokens, total_embedding_model_tokens
 
+
 def get_answer_from_llama_file(messages, file):
     dialog_messages = format_dialog_messages(messages)
     lang_code = get_language_code(remove_prompt_from_text(messages[-1]))
@@ -172,23 +184,20 @@ def get_answer_from_llama_file(messages, file):
     return answer, total_llm_model_tokens, total_embedding_model_tokens
 
 
-model = whisper.load_model("base")
-
-
 def get_text_from_whisper(voice_file_path):
     with open(voice_file_path, "rb") as f:
         transcript = openai.Audio.transcribe("whisper-1", f)
     return transcript.text
 
 
-
-
 lang_code_voice_map = {
     'zh': ['zh-CN-XiaoxiaoNeural', 'zh-CN-XiaohanNeural', 'zh-CN-YunxiNeural', 'zh-CN-YunyangNeural'],
-    'en': ['en-US-JennyNeural', 'en-US-RogerNeural', 'en-IN-NeerjaNeural', 'en-IN-PrabhatNeural', 'en-AU-AnnetteNeural', 'en-AU-CarlyNeural', 'en-GB-AbbiNeural', 'en-GB-AlfieNeural'],
+    'en': ['en-US-JennyNeural', 'en-US-RogerNeural', 'en-IN-NeerjaNeural', 'en-IN-PrabhatNeural', 'en-AU-AnnetteNeural',
+           'en-AU-CarlyNeural', 'en-GB-AbbiNeural', 'en-GB-AlfieNeural'],
     'ja': ['ja-JP-AoiNeural', 'ja-JP-DaichiNeural'],
     'de': ['de-DE-AmalaNeural', 'de-DE-BerndNeural'],
 }
+
 
 def convert_to_ssml(text, voice_name=None):
     try:
@@ -206,6 +215,7 @@ def convert_to_ssml(text, voice_name=None):
     ssml += '</speak>'
 
     return ssml
+
 
 def get_voice_file_from_text(text, voice_name=None):
     speech_config = SpeechConfig(subscription=SPEECH_KEY, region=SPEECH_REGION)

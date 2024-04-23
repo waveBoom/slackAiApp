@@ -49,7 +49,7 @@ def format_text(text):
     return fix_chinese_split_chunk_size_error
 
 def scrape_website(url: str) -> str:
-    endpoint_url = f"https://hcbscraper.boboom.workers.dev/?url={url}&selector=div"
+    endpoint_url = f"https://hcbscraper.boboom.workers.dev/?url={url}&selector=p"
     # headers = {
     #     'CF-Access-Client-Id': CF_ACCESS_CLIENT_ID,
     #     'CF-Access-Client-Secret': CF_ACCESS_CLIENT_SECRET,
@@ -58,7 +58,7 @@ def scrape_website(url: str) -> str:
     if response.status_code == 200:
         try:
             json_response = response.json()
-            tag_array = json_response['result']['div']
+            tag_array = json_response['result']['p']
             text = ''.join(tag_array)
             return format_text(text)
         except:

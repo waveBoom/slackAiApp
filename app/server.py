@@ -93,7 +93,9 @@ def insert_space(text):
 
     return text
 
+print("thread_message_history debug model reload start-------------")
 thread_message_history = {}
+print("thread_message_history debug model reload end---------------")
 MAX_THREAD_MESSAGE_HISTORY = 10
 
 def update_thread_history(thread_ts, message_str=None, urls=None, file=None):
@@ -548,4 +550,4 @@ def update_home_tab(client, event, logger):
 scheduler.start()
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', debug=True, port=8888)
