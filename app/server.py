@@ -68,8 +68,8 @@ def send_daily_news(client, news):
 @scheduler.task('cron', id='daily_news_task', hour=1, minute=30)
 def schedule_news():
     logging.info("=====> Start to send daily news!")
-    all_news_blocks = build_all_news_block()
-    send_daily_news(slack_app.client, all_news_blocks)
+    # all_news_blocks = build_all_news_block()
+    # send_daily_news(slack_app.client, all_news_blocks)
 
 @app.route("/slack/events", methods=["POST"])
 def slack_events():
