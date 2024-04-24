@@ -126,7 +126,10 @@ def get_answer_from_chatGPT(messages):
     )
     logging.info(completion.usage)
     total_tokens = completion.usage.total_tokens
-    return completion.choices[0].message.content, total_tokens, None
+    res = remove_prompt_from_text(str(completion.choices[0].message.content))
+
+    return res, total_tokens, None
+
 
 
 def get_answer_from_llama_web(messages, urls):
@@ -177,7 +180,8 @@ def get_answer_from_llama_file(messages, file):
     logging.info(dialog_messages)
     logging.info('=====> text_qa_template')
     logging.info(prompt)
-    answer = answer = index.as_query_engine(text_qa_template=prompt).query(dialog_messages)
+    answer = index.as_query_engine(text_qa_template=prompt).query(dialog_messages)
+    answer.response = remove_prompt_from_text(answer.response)
     total_llm_model_tokens = llm_predictor.last_token_usage
     total_embedding_model_tokens = service_context.embed_model.last_token_usage
     return answer, total_llm_model_tokens, total_embedding_model_tokens
