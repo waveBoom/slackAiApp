@@ -3,23 +3,21 @@
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = "my-gpt-reader"
+app = "my-slack-ai-bot"
 primary_region = "sin"
 kill_signal = "SIGINT"
 kill_timeout = "5s"
 
-[build]
-  builder = "paketobuildpacks/builder:full"
-  builtin = "python"
-
-[build.settings]
-  pythonbase = "3.9-slim-buster"
 
 [env]
   PORT = "8080"
 
+[build]
+  image = "mygptreader-web:latest"
+
+
 [[mounts]]
-  source = "data_machines"
+  source = "volumes_for_slackbot"
   destination = "/data/myGPTReader"
   processes = ["app"]
 
@@ -44,4 +42,7 @@ kill_timeout = "5s"
     timeout = "2s"
     grace_period = "1s"
     restart_limit = 0
+
+[[vm]]
+  memory = "512mb"
 

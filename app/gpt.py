@@ -13,7 +13,6 @@ from langchain.chat_models import ChatOpenAI
 from azure.cognitiveservices.speech import SpeechConfig, SpeechSynthesizer, ResultReason, CancellationReason, \
     SpeechSynthesisOutputFormat
 from azure.cognitiveservices.speech.audio import AudioOutputConfig
-import whisper
 
 from app.fetch_web_post import get_urls, get_youtube_transcript, scrape_website, scrape_website_by_phantomjscloud
 from app.prompt import get_prompt_template
@@ -26,7 +25,7 @@ SPEECH_REGION = os.environ.get('SPEECH_REGION')
 # openai.api_key = OPENAI_API_KEY
 
 index_cache_web_dir = Path('/tmp/myGPTReader/cache_web/')
-index_cache_file_dir = Path('/Users/bobo/data/myGPTReader/file/')
+index_cache_file_dir = Path('/data/myGPTReader')
 index_cache_voice_dir = Path('/tmp/myGPTReader/voice/')
 
 if not index_cache_web_dir.is_dir():
