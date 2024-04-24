@@ -4,7 +4,7 @@
 #
 
 app = "my-slack-ai-bot"
-primary_region = "sin"
+primary_region = "lax"
 kill_signal = "SIGINT"
 kill_timeout = "5s"
 
@@ -13,8 +13,7 @@ kill_timeout = "5s"
   PORT = "8080"
 
 [build]
-  image = "mygptreader-web:latest"
-
+    dockerfile="Dockerfile"
 
 [[mounts]]
   source = "volumes_for_slackbot"
