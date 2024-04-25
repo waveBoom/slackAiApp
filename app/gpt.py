@@ -24,7 +24,7 @@ SPEECH_KEY = os.environ.get('SPEECH_KEY')
 SPEECH_REGION = os.environ.get('SPEECH_REGION')
 
 index_cache_web_dir = Path('/tmp/myGPTReader/cache_web/')
-index_cache_file_dir = Path('/Users/bobo/data/myGPTReader')
+index_cache_file_dir = Path('/data/myGPTReader')
 index_cache_voice_dir = Path('/tmp/myGPTReader/voice/')
 
 if not index_cache_web_dir.is_dir():
