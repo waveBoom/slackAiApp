@@ -36,7 +36,7 @@ if not index_cache_voice_dir.is_dir():
 if not index_cache_file_dir.is_dir():
     index_cache_file_dir.mkdir(parents=True, exist_ok=True)
 
-model_name = "gpt-4-turbo-2024-04-09"
+model_name = "gpt-4"
 
 llm_predictor = LLMPredictor(llm=ChatOpenAI(
     temperature=0, model_name=model_name))
@@ -246,12 +246,29 @@ def get_voice_file_from_text(text, voice_name=None):
 
 
 if __name__ == '__main__':
-    print("----- start tts -----")
+    print("----- start -----")
+    # test for tts
     # text = "臣密言：臣以险衅，夙遭闵凶。生孩六月，慈父见背；行年四岁，舅夺母志。祖母刘愍臣孤弱，躬亲抚养。臣少多疾病，九岁不行，零丁孤苦，至于成立。既无叔伯，终鲜兄弟，门衰祚薄，晚有儿息。外无期功强近之亲，内无应门五尺之僮"
     # text = "我与父亲不相见已二年余了,我最不能忘记的是他的背影。那年冬天,祖母死了,父亲的差使也交卸了,正是祸不单行的日子。我从北京到徐州打算跟着父亲奔丧回家"
     # get_voice_file_from_text(text)
     # print("----- end tts ------")
 
-    res, totalToken, total_embedding_model_tokens = get_answer_from_chatGPT("给我三个悲伤的成语")
-    print(res)
-    print(totalToken)
+    # test gpt
+    # res, totalToken, total_embedding_model_tokens = get_answer_from_chatGPT("给我三个悲伤的成语")
+    # print(res)
+    # print(totalToken)
+
+    # test speech whisper model
+    # res = get_text_from_whisper("/Users/bobo/Downloads/audio_message.mp4")
+    # print(res)
+
+    # test for llama_index
+    # documents = SimpleDirectoryReader(input_files=["/Users/bobo/Downloads/李光耀观天下 (李光耀) (Z-Library).epub"]).load_data()
+    # index = GPTVectorStoreIndex.from_documents(documents, service_context=service_context)
+    # index.set_index_id("tset20230000000")
+    # prompt = get_prompt_template()
+    # answer = index.as_query_engine(text_qa_template=prompt).query("书中讲述了作者关于新加坡的什么看法和见解,以及新加坡对中国的态度")
+    # answer.response = remove_prompt_from_text(answer.response)
+    # print(answer)
+
+

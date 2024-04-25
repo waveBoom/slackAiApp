@@ -11,7 +11,7 @@ kill_timeout = "5s"
 
 [env]
   PORT = "8080"
-  OPENAI_API_BASE='https://api.xiaoai.plus/v1'
+  OPENAI_API_BASE='https://openkey.cloud/v1'
 
 
 [build]

@@ -131,7 +131,7 @@ def extract_urls_from_event(event):
 
 filetype_extension_allowed = ['epub', 'pdf', 'text', 'docx', 'markdown', 'm4a', 'webm', 'mp3', 'wav']
 filetype_voice_extension_allowed = ['m4a', 'webm', 'mp3', 'wav']
-max_file_size = 3 * 1024 * 1024
+max_file_size = 6 * 1024 * 1024
 
 limiter_message_per_user = 5
 limiter_time_period = 24 * 3600
