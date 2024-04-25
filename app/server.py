@@ -152,7 +152,7 @@ def remove_url_from_text(text, urls):
 def format_dialog_text(text, voicemessage=None):
     if text is None:
         return voicemessage if voicemessage else ''
-    return insert_space(text.replace("<@U051JKES6Q1>", "")) + ('\n' + voicemessage if voicemessage else '')
+    return insert_space(text.replace("<@U06U27AJH1D>", "")) + ('\n' + voicemessage if voicemessage else '')
 
 def generate_message_id(channel, thread_ts):
     return f"{channel}-{thread_ts}"
