@@ -4,7 +4,6 @@ import hashlib
 import random
 import uuid
 import openai
-from dotenv import load_dotenv
 from pathlib import Path
 from llama_index import ServiceContext, GPTVectorStoreIndex, LLMPredictor, RssReader, SimpleDirectoryReader, \
     StorageContext, load_index_from_storage
@@ -18,14 +17,14 @@ from app.fetch_web_post import get_urls, get_youtube_transcript, scrape_website,
 from app.prompt import get_prompt_template
 from app.util import get_language_code, get_youtube_video_id
 
-load_dotenv()
-OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
+
+# OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
+# openai.api_key = OPENAI_API_KEY
 SPEECH_KEY = os.environ.get('SPEECH_KEY')
 SPEECH_REGION = os.environ.get('SPEECH_REGION')
-# openai.api_key = OPENAI_API_KEY
 
 index_cache_web_dir = Path('/tmp/myGPTReader/cache_web/')
-index_cache_file_dir = Path('/data/myGPTReader')
+index_cache_file_dir = Path('/Users/bobo/data/myGPTReader')
 index_cache_voice_dir = Path('/tmp/myGPTReader/voice/')
 
 if not index_cache_web_dir.is_dir():
@@ -37,8 +36,10 @@ if not index_cache_voice_dir.is_dir():
 if not index_cache_file_dir.is_dir():
     index_cache_file_dir.mkdir(parents=True, exist_ok=True)
 
+model_name = "gpt-4-turbo-2024-04-09"
+
 llm_predictor = LLMPredictor(llm=ChatOpenAI(
-    temperature=0, model_name="gpt-4"))
+    temperature=0, model_name=model_name))
 
 service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
 
@@ -121,7 +122,7 @@ def get_answer_from_chatGPT(messages):
     logging.info('=====> Use chatGPT to answer!')
     logging.info(dialog_messages)
     completion = openai.ChatCompletion.create(
-        model="gpt-4",
+        model=model_name,
         messages=[{"role": "user", "content": dialog_messages}]
     )
     logging.info(completion.usage)
@@ -247,6 +248,10 @@ def get_voice_file_from_text(text, voice_name=None):
 if __name__ == '__main__':
     print("----- start tts -----")
     # text = "臣密言：臣以险衅，夙遭闵凶。生孩六月，慈父见背；行年四岁，舅夺母志。祖母刘愍臣孤弱，躬亲抚养。臣少多疾病，九岁不行，零丁孤苦，至于成立。既无叔伯，终鲜兄弟，门衰祚薄，晚有儿息。外无期功强近之亲，内无应门五尺之僮"
-    text = "我与父亲不相见已二年余了,我最不能忘记的是他的背影。那年冬天,祖母死了,父亲的差使也交卸了,正是祸不单行的日子。我从北京到徐州打算跟着父亲奔丧回家"
-    get_voice_file_from_text(text)
-    print("----- end tts ------")
+    # text = "我与父亲不相见已二年余了,我最不能忘记的是他的背影。那年冬天,祖母死了,父亲的差使也交卸了,正是祸不单行的日子。我从北京到徐州打算跟着父亲奔丧回家"
+    # get_voice_file_from_text(text)
+    # print("----- end tts ------")
+
+    res, totalToken, total_embedding_model_tokens = get_answer_from_chatGPT("给我三个悲伤的成语")
+    print(res)
+    print(totalToken)

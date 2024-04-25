@@ -97,3 +97,8 @@ def get_youtube_transcript(video_id: str) -> str:
     except Exception as e:
         logging.warning(f"Error: {e} - {video_id}")
     return None
+
+
+if __name__ == '__main__':
+    text = scrape_website_by_phantomjscloud("https://zh.wikipedia.org/wiki/%E5%94%90%E7%B4%8D%C2%B7%E5%B7%9D%E6%99%AE")
+    print(text)
