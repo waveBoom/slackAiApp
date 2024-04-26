@@ -36,7 +36,7 @@ if not index_cache_voice_dir.is_dir():
 if not index_cache_file_dir.is_dir():
     index_cache_file_dir.mkdir(parents=True, exist_ok=True)
 
-model_name = "gpt-4"
+model_name = "gpt-3.5-turbo"
 
 llm_predictor = LLMPredictor(llm=ChatOpenAI(
     temperature=0, model_name=model_name))
