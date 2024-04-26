@@ -155,7 +155,7 @@ def get_answer_from_llama_web(messages, urls):
     logging.info(dialog_messages)
     logging.info('=====> text_qa_template')
     logging.info(prompt.prompt)
-    answer = index.as_query_engine(text_qa_template=prompt).query(dialog_messages)
+    answer = index.as_query_engine(text_qa_template=prompt, similarity_top_k=5).query(dialog_messages)
     answer.response = remove_prompt_from_text(answer.response)
     total_llm_model_tokens = llm_predictor.last_token_usage
     total_embedding_model_tokens = service_context.embed_model.last_token_usage
@@ -181,7 +181,7 @@ def get_answer_from_llama_file(messages, file):
     logging.info(dialog_messages)
     logging.info('=====> text_qa_template')
     logging.info(prompt)
-    answer = index.as_query_engine(text_qa_template=prompt).query(dialog_messages)
+    answer = index.as_query_engine(text_qa_template=prompt, similarity_top_k=5).query(dialog_messages)
     answer.response = remove_prompt_from_text(answer.response)
     total_llm_model_tokens = llm_predictor.last_token_usage
     total_embedding_model_tokens = service_context.embed_model.last_token_usage
@@ -263,12 +263,25 @@ if __name__ == '__main__':
     # print(res)
 
     # test for llama_index
-    # documents = SimpleDirectoryReader(input_files=["/Users/bobo/Downloads/李光耀观天下 (李光耀) (Z-Library).epub"]).load_data()
+    # documents = SimpleDirectoryReader(input_files=["/Users/bobo/Downloads/物料.txt"]).load_data()
     # index = GPTVectorStoreIndex.from_documents(documents, service_context=service_context)
     # index.set_index_id("tset20230000000")
     # prompt = get_prompt_template()
-    # answer = index.as_query_engine(text_qa_template=prompt).query("书中讲述了作者关于新加坡的什么看法和见解,以及新加坡对中国的态度")
+    # answer = index.as_query_engine(text_qa_template=prompt, similarity_top_k=8).query("詹姆斯参加过几次奥运会")
     # answer.response = remove_prompt_from_text(answer.response)
+    # for node in answer.source_nodes:
+    #     if node.similarity != None:
+    #         print(node.similarity)
+    #         print(node.source_text)
+    #
     # print(answer)
+
+
+    # test for rrs
+    # documents = []
+    # urls = ["https://rsshub.app/zhihu/hotlist"]
+    # rss_documents = RssReader().load_data(urls)
+    # documents = documents + rss_documents
+    # print(documents)
 
 
