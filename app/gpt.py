@@ -4,14 +4,14 @@ import hashlib
 import random
 import uuid
 import openai
+import tiktoken
 from pathlib import Path
-from llama_index import ServiceContext, GPTVectorStoreIndex, LLMPredictor, RssReader, SimpleDirectoryReader, \
-    StorageContext, load_index_from_storage
-from llama_index.readers.schema.base import Document
-from langchain.chat_models import ChatOpenAI
 from azure.cognitiveservices.speech import SpeechConfig, SpeechSynthesizer, ResultReason, CancellationReason, \
     SpeechSynthesisOutputFormat
 from azure.cognitiveservices.speech.audio import AudioOutputConfig
+from llama_index.core import Document, ServiceContext, StorageContext, VectorStoreIndex, Settings
+from llama_index.core.callbacks import TokenCountingHandler, CallbackManager
+from llama_index.llms.openai import OpenAI
 
 from app.fetch_web_post import get_urls, get_youtube_transcript, scrape_website, scrape_website_by_phantomjscloud
 from app.prompt import get_prompt_template
@@ -38,14 +38,17 @@ if not index_cache_file_dir.is_dir():
 
 model_name = "gpt-3.5-turbo"
 
-llm_predictor = LLMPredictor(llm=ChatOpenAI(
-    temperature=0, model_name=model_name))
+llm = OpenAI(temperature=0, model=model_name)
 
-service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
+service_context = ServiceContext.from_defaults(llm=llm)
 
 web_storage_context = StorageContext.from_defaults()
 file_storage_context = StorageContext.from_defaults()
 
+token_counter = TokenCountingHandler(
+    tokenizer=tiktoken.encoding_for_model(model_name).encode
+)
+Settings.callback_manager = CallbackManager([token_counter])
 
 def get_unique_md5(urls):
     urls_str = ''.join(sorted(urls))
@@ -144,7 +147,7 @@ def get_answer_from_llama_web(messages, urls):
         logging.info(f"=====> Build index from web!")
         documents = get_documents_from_urls(combained_urls)
         logging.info(documents)
-        index = GPTVectorStoreIndex.from_documents(documents, service_context=service_context)
+        index = VectorStoreIndex.from_documents(documents, service_context=service_context)
         index.set_index_id(index_file_name)
         index.storage_context.persist()
         logging.info(
@@ -157,9 +160,11 @@ def get_answer_from_llama_web(messages, urls):
     logging.info(prompt.prompt)
     answer = index.as_query_engine(text_qa_template=prompt, similarity_top_k=5).query(dialog_messages)
     answer.response = remove_prompt_from_text(answer.response)
-    total_llm_model_tokens = llm_predictor.last_token_usage
-    total_embedding_model_tokens = service_context.embed_model.last_token_usage
-    return answer, total_llm_model_tokens, total_embedding_model_tokens
+    total_embedding_token_count = token_counter.total_embedding_token_count
+    total_llm_token_count = token_counter.total_llm_token_count
+
+    token_counter.reset_counts()
+    return answer, total_llm_token_count, total_embedding_token_count
 
 
 def get_answer_from_llama_file(messages, file):
@@ -183,9 +188,11 @@ def get_answer_from_llama_file(messages, file):
     logging.info(prompt)
     answer = index.as_query_engine(text_qa_template=prompt, similarity_top_k=5).query(dialog_messages)
     answer.response = remove_prompt_from_text(answer.response)
-    total_llm_model_tokens = llm_predictor.last_token_usage
-    total_embedding_model_tokens = service_context.embed_model.last_token_usage
-    return answer, total_llm_model_tokens, total_embedding_model_tokens
+    total_embedding_token_count = token_counter.total_embedding_token_count
+    total_llm_token_count = token_counter.total_llm_token_count
+
+    token_counter.reset_counts()
+    return answer, total_llm_token_count, total_embedding_token_count
 
 
 def get_text_from_whisper(voice_file_path):
