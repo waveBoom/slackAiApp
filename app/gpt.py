@@ -3,20 +3,24 @@ import logging
 import hashlib
 import random
 import uuid
-import openai
 import tiktoken
 from pathlib import Path
 from azure.cognitiveservices.speech import SpeechConfig, SpeechSynthesizer, ResultReason, CancellationReason, \
     SpeechSynthesisOutputFormat
 from azure.cognitiveservices.speech.audio import AudioOutputConfig
-from llama_index.core import Document, ServiceContext, StorageContext, VectorStoreIndex, Settings
+from llama_index.core import Document, ServiceContext, StorageContext, VectorStoreIndex, Settings, SimpleDirectoryReader, load_index_from_storage
 from llama_index.core.callbacks import TokenCountingHandler, CallbackManager
-from llama_index.llms.openai import OpenAI
-
+from llama_index.legacy.readers import RssReader
 from app.fetch_web_post import get_urls, get_youtube_transcript, scrape_website, scrape_website_by_phantomjscloud
 from app.prompt import get_prompt_template
 from app.util import get_language_code, get_youtube_video_id
+from openai import OpenAI
+from openai.types.audio import Transcription
 
+client = OpenAI(
+    api_key=os.environ.get("OPENAI_API_KEY"),
+)
+model_name = "gpt-3.5-turbo"
 
 # OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
 # openai.api_key = OPENAI_API_KEY
@@ -36,9 +40,9 @@ if not index_cache_voice_dir.is_dir():
 if not index_cache_file_dir.is_dir():
     index_cache_file_dir.mkdir(parents=True, exist_ok=True)
 
-model_name = "gpt-3.5-turbo"
 
-llm = OpenAI(temperature=0, model=model_name)
+from llama_index.llms.openai import OpenAI as llmOpenAi
+llm = llmOpenAi(temperature=0, model=model_name)
 
 service_context = ServiceContext.from_defaults(llm=llm)
 
@@ -60,13 +64,32 @@ def format_dialog_messages(messages):
     return "\n".join(messages)
 
 
+def format_dialog_messages_to_gpt(messages):
+    formatted_messages = []
+    for message in messages:
+        # 忽略空字符串
+        if not message.strip():
+            continue
+        if message.startswith('User:'):
+            role = 'user'
+            content = message[len('User:'):].strip()  # 移除前缀和前后的空白字符
+        elif message.startswith('chatGPT:'):
+            role = 'assistant'
+            content = message[len('chatGPT:'):].strip()  # 移除前缀和前后的空白字符
+        else:
+            # 如果不是以'User:'或'Chatgpt:'开头，跳过处理
+            continue
+        formatted_messages.append({"role": role, "content": content})
+    return formatted_messages
+
+
 def get_document_from_youtube_id(video_id):
     if video_id is None:
         return None
     transcript = get_youtube_transcript(video_id)
     if transcript is None:
         return None
-    return Document(transcript)
+    return Document(text=transcript)
 
 
 def remove_prompt_from_text(text):
@@ -76,14 +99,14 @@ def remove_prompt_from_text(text):
 def get_documents_from_urls(urls):
     documents = []
     for url in urls['page_urls']:
-        document = Document(scrape_website(url))
+        document = Document(text=scrape_website(url))
         documents.append(document)
     if len(urls['rss_urls']) > 0:
         rss_documents = RssReader().load_data(urls['rss_urls'])
         documents = documents + rss_documents
     if len(urls['phantomjscloud_urls']) > 0:
         for url in urls['phantomjscloud_urls']:
-            document = Document(scrape_website_by_phantomjscloud(url))
+            document = Document(text=scrape_website_by_phantomjscloud(url))
             documents.append(document)
     if len(urls['youtube_urls']) > 0:
         for url in urls['youtube_urls']:
@@ -92,7 +115,7 @@ def get_documents_from_urls(urls):
             if (document is not None):
                 documents.append(document)
             else:
-                documents.append(Document(f"Can't get transcript from youtube video: {url}"))
+                documents.append(Document(text=f"Can't get transcript from youtube video: {url}"))
     return documents
 
 
@@ -121,12 +144,12 @@ def get_index_name_from_file(file: str):
 
 
 def get_answer_from_chatGPT(messages):
-    dialog_messages = format_dialog_messages(messages)
+    dialog_messages = format_dialog_messages_to_gpt(messages)
     logging.info('=====> Use chatGPT to answer!')
     logging.info(dialog_messages)
-    completion = openai.ChatCompletion.create(
+    completion = client.chat.completions.create(
+        messages=dialog_messages,
         model=model_name,
-        messages=[{"role": "user", "content": dialog_messages}]
     )
     logging.info(completion.usage)
     total_tokens = completion.usage.total_tokens
@@ -157,7 +180,6 @@ def get_answer_from_llama_web(messages, urls):
     logging.info('=====> dialog_messages')
     logging.info(dialog_messages)
     logging.info('=====> text_qa_template')
-    logging.info(prompt.prompt)
     answer = index.as_query_engine(text_qa_template=prompt, similarity_top_k=5).query(dialog_messages)
     answer.response = remove_prompt_from_text(answer.response)
     total_embedding_token_count = token_counter.total_embedding_token_count
@@ -175,7 +197,7 @@ def get_answer_from_llama_file(messages, file):
     if index is None:
         logging.info(f"=====> Build index from file!")
         documents = SimpleDirectoryReader(input_files=[file]).load_data()
-        index = GPTVectorStoreIndex.from_documents(documents, service_context=service_context)
+        index = VectorStoreIndex.from_documents(documents, service_context=service_context)
         index.set_index_id(index_name)
         index.storage_context.persist()
         logging.info(
@@ -197,7 +219,7 @@ def get_answer_from_llama_file(messages, file):
 
 def get_text_from_whisper(voice_file_path):
     with open(voice_file_path, "rb") as f:
-        transcript = openai.Audio.transcribe("whisper-1", f)
+        transcript = client.audio.transcriptions.create(file=f, model="whisper-1")
     return transcript.text
 
 
@@ -271,10 +293,10 @@ if __name__ == '__main__':
 
     # test for llama_index
     # documents = SimpleDirectoryReader(input_files=["/Users/bobo/Downloads/物料.txt"]).load_data()
-    # index = GPTVectorStoreIndex.from_documents(documents, service_context=service_context)
+    # index = VectorStoreIndex.from_documents(documents, service_context=service_context)
     # index.set_index_id("tset20230000000")
     # prompt = get_prompt_template()
-    # answer = index.as_query_engine(text_qa_template=prompt, similarity_top_k=8).query("詹姆斯参加过几次奥运会")
+    # answer = index.as_query_engine(text_qa_template=prompt, similarity_top_k=5).query("总结下这个内容")
     # answer.response = remove_prompt_from_text(answer.response)
     # for node in answer.source_nodes:
     #     if node.similarity != None:
@@ -290,5 +312,22 @@ if __name__ == '__main__':
     # rss_documents = RssReader().load_data(urls)
     # documents = documents + rss_documents
     # print(documents)
+
+    # mss = []
+    # dialog = "介绍下美国总统肯尼迪"
+    # mss.append(f'User:{dialog}')
+    # gpt_response = get_answer_from_chatGPT(mss)
+    # print(gpt_response)
+    # from server import insert_space
+    # mss.append('chatGPT: %s' % insert_space(f'{gpt_response}'))
+    # dialog = "我上一个对话是什么"
+    # mss.append(f'User:{dialog}')
+    # gpt_response = get_answer_from_chatGPT(mss)
+    # print(gpt_response)
+    # mss.append('chatGPT: %s' % insert_space(f'{gpt_response}'))
+    # dialog = "他是第几届"
+    # mss.append(f'User:{dialog}')
+    # gpt_response = get_answer_from_chatGPT(mss)
+    # print(gpt_response)
 
 

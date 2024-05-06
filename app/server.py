@@ -262,6 +262,7 @@ def bot_process(event, say, logger):
     except Exception as e:
         print(f"An error occurred: {e}")
         logger.error(f"An error occurred: {e}")
+        logger.exception(f"An error occurred:")
         say(f'<@{user}>, {"内容被马斯克发到火星了,请查看发射日志😂"}', thread_ts=thread_ts)
 
 @slack_app.event("app_mention")
