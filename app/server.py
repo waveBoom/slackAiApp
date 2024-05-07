@@ -15,7 +15,7 @@ from slack_bolt.adapter.flask import SlackRequestHandler
 from slack_bolt.error import BoltUnhandledRequestError
 import concurrent.futures
 from app.daily_hot_news import build_all_news_block
-from app.gpt import get_answer_from_chatGPT, get_answer_from_llama_file, get_answer_from_llama_web, get_text_from_whisper, get_voice_file_from_text, index_cache_file_dir
+from app.gpt import get_answer_from_chatGPT, get_answer_from_llama_file, get_answer_from_llama_web, get_text_from_whisper, get_voice_file_from_text, index_cache_file_dir, get_answer_from_llama_file_route_engine
 from app.rate_limiter import RateLimiter
 from app.user import get_user, is_premium_user, is_active_user, update_message_token_usage
 from app.util import md5
@@ -237,7 +237,12 @@ def bot_process(event, say, logger):
     # TODO: https://github.com/jerryjliu/llama_index/issues/778
     # if it can get the context_str, then put this prompt into the thread_message_history to provide more context to the chatGPT
     if file is not None:
-        future = executor.submit(get_answer_from_llama_file, dialog_context_keep_latest(thread_message_history[parent_thread_ts]['dialog_texts']), file)
+        if channel == 'router_query_engine':
+            logger.info("-- use router_query_engine  for file --")
+            future = executor.submit(get_answer_from_llama_file_route_engine, dialog_context_keep_latest(thread_message_history[parent_thread_ts]['dialog_texts']), file)
+        else:
+            logger.info("-- use general query engine for file --")
+            future = executor.submit(get_answer_from_llama_file, dialog_context_keep_latest(thread_message_history[parent_thread_ts]['dialog_texts']), file)
     elif len(urls) > 0:
         future = executor.submit(get_answer_from_llama_web, thread_message_history[parent_thread_ts]['dialog_texts'], list(urls))
     else:

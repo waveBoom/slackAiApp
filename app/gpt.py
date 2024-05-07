@@ -8,12 +8,17 @@ from pathlib import Path
 from azure.cognitiveservices.speech import SpeechConfig, SpeechSynthesizer, ResultReason, CancellationReason, \
     SpeechSynthesisOutputFormat
 from azure.cognitiveservices.speech.audio import AudioOutputConfig
-from llama_index.core import Document, ServiceContext, StorageContext, VectorStoreIndex, Settings, SimpleDirectoryReader, load_index_from_storage
+from llama_index.core import Document, ServiceContext, StorageContext, VectorStoreIndex, Settings, \
+    SimpleDirectoryReader, load_index_from_storage, SummaryIndex
+from llama_index.core.indices import SimpleKeywordTableIndex
+from llama_index.core.selectors import LLMMultiSelector
+from llama_index.core.tools import QueryEngineTool
+from llama_index.core.query_engine import RouterQueryEngine
 from llama_index.core.callbacks import TokenCountingHandler, CallbackManager
 from llama_index.legacy.readers import RssReader
 from app.fetch_web_post import get_urls, get_youtube_transcript, scrape_website, scrape_website_by_phantomjscloud
 from app.prompt import get_prompt_template
-from app.util import get_language_code, get_youtube_video_id
+from app.util import get_language_code, get_youtube_video_id, md5
 from openai import OpenAI
 from openai.types.audio import Transcription
 
@@ -93,7 +98,7 @@ def get_document_from_youtube_id(video_id):
 
 
 def remove_prompt_from_text(text):
-    return text.replace('chatGPT:', '').strip()
+    return text.replace('chatGPT:', '').replace('User:', '').replace("Assistant:", '').strip()
 
 
 def get_documents_from_urls(urls):
@@ -217,6 +222,100 @@ def get_answer_from_llama_file(messages, file):
     return answer, total_llm_token_count, total_embedding_token_count
 
 
+def get_answer_from_llama_file_route_engine(messages, file):
+    summary = 'summary_'
+    keyword = 'keyword_'
+    dialog_messages = format_dialog_messages(messages)
+    lang_code = get_language_code(remove_prompt_from_text(messages[-1]))
+    index_name = get_index_name_from_file(file)
+    summary_index_name = summary+index_name
+    keyword_index_name = keyword+index_name
+    vector_index = get_index_from_file_cache(index_name)
+    summary_index = get_index_from_file_cache(summary_index_name)
+    keyword_index = get_index_from_file_cache(keyword_index_name)
+    if vector_index is None or summary_index is None or keyword_index is None:
+        documents = SimpleDirectoryReader(input_files=[file]).load_data()
+        if vector_index is None:
+            logging.info(f"=====> Build vector_index from file!")
+            vector_index = VectorStoreIndex.from_documents(documents, service_context=service_context)
+            vector_index.set_index_id(index_name)
+            vector_index.storage_context.persist()
+            logging.info(
+                f"=====> Save index to disk path: {index_cache_file_dir / index_name}")
+        if summary_index is None:
+            logging.info(f"=====> Build summary_index from file!")
+            summary_index = SummaryIndex.from_documents(documents,service_context=service_context)
+            summary_index.set_index_id(summary_index_name)
+            summary_index.storage_context.persist()
+
+        if keyword_index is None:
+            logging.info(f"=====> Build keyword_index from file!")
+            keyword_index = SimpleKeywordTableIndex.from_documents(documents,service_context=service_context)
+            keyword_index.set_index_id(keyword_index_name)
+            keyword_index.storage_context.persist()
+
+    prompt = get_prompt_template(lang_code)
+    logging.info('=====> Use llama file with chatGPT to answer!')
+    logging.info('=====> dialog_messages')
+    # logging.info(dialog_messages)
+    logging.info('=====> text_qa_template')
+    logging.info(prompt)
+    vector_query_engine = vector_index.as_query_engine(text_qa_template=prompt, similarity_top_k=5)
+    summary_query_engine = summary_index.as_query_engine(
+        response_mode="tree_summarize",
+        use_async=True,
+    )
+
+    summary_tool = QueryEngineTool.from_defaults(
+        query_engine=summary_query_engine,
+        description=(
+            "Useful for summarization questions related to the eassy or the file on "
+            " What I Worked On."
+        ),
+    )
+
+    vector_tool = QueryEngineTool.from_defaults(
+        query_engine=vector_query_engine,
+        description=(
+            "Useful for retrieving specific context using vectors or Embedding from the essay or the file on What"
+            " I Worked On."
+        ),
+    )
+
+    keyword_tool = QueryEngineTool.from_defaults(
+        query_engine=vector_query_engine,
+        description=(
+            "Useful for retrieving specific context using keywords from  the essay or the file on What"
+            " I Worked On."
+        ),
+    )
+
+    query_engine = RouterQueryEngine(
+        selector=LLMMultiSelector.from_defaults(),
+        query_engine_tools=[
+            summary_tool,
+            vector_tool,
+            keyword_tool
+        ],
+    )
+    answer = query_engine.query(dialog_messages)
+    selectors = ["summary index engine","vector index engine","keyword index engine"]
+    inds = answer.metadata["selector_result"].inds
+    engine_names = ''
+    for index, ind in enumerate(inds):
+        if index >= 1:
+            engine_names += ' , '
+        engine_names += selectors[ind]
+
+    response = remove_prompt_from_text(answer.response)
+    return_content = f"{response} \n --(search by this engine: {engine_names})"
+    answer.response = return_content
+    total_embedding_token_count = token_counter.total_embedding_token_count
+    total_llm_token_count = token_counter.total_llm_token_count
+    token_counter.reset_counts()
+    return answer, total_llm_token_count, total_embedding_token_count
+
+
 def get_text_from_whisper(voice_file_path):
     with open(voice_file_path, "rb") as f:
         transcript = client.audio.transcriptions.create(file=f, model="whisper-1")
@@ -329,5 +428,19 @@ if __name__ == '__main__':
     # mss.append(f'User:{dialog}')
     # gpt_response = get_answer_from_chatGPT(mss)
     # print(gpt_response)
+
+
+
+    # fileType = "txt"
+    # temp_file_filename = index_cache_file_dir / ('物料'+"."+fileType)
+    # temp_file_md5 = md5(temp_file_filename)
+    # file_md5_name = index_cache_file_dir / (temp_file_md5 + '.' + fileType)
+    # if not file_md5_name.exists():
+    #     temp_file_filename.rename(file_md5_name)
+    #
+    # answer, total_llm_token_count, total_embedding_token_count = get_answer_from_llama_file_route_engine("詹姆斯做过哪些慈善和公益",file_md5_name)
+    # print(answer)
+
+
 
 
