@@ -19,7 +19,7 @@ from llama_index.legacy.readers import RssReader
 from app.fetch_web_post import get_urls, get_youtube_transcript, scrape_website, scrape_website_by_phantomjscloud
 from app.prompt import get_prompt_template
 from app.util import get_language_code, get_youtube_video_id, md5
-from openai import OpenAI
+from openai import OpenAI, DefaultAsyncHttpxClient, DefaultHttpxClient
 from openai.types.audio import Transcription
 
 client = OpenAI(
@@ -47,9 +47,13 @@ if not index_cache_file_dir.is_dir():
 
 
 from llama_index.llms.openai import OpenAI as llmOpenAi
+httpclient = DefaultHttpxClient()
+
 llm = llmOpenAi(temperature=0, model=model_name)
+llm_tree_summary = llmOpenAi(temperature=0, model=model_name, http_client=httpclient)
 
 service_context = ServiceContext.from_defaults(llm=llm)
+service_context_tree_summary = ServiceContext.from_defaults(llm=llm_tree_summary)
 
 web_storage_context = StorageContext.from_defaults()
 file_storage_context = StorageContext.from_defaults()
@@ -244,7 +248,7 @@ def get_answer_from_llama_file_route_engine(messages, file):
                 f"=====> Save index to disk path: {index_cache_file_dir / index_name}")
         if summary_index is None:
             logging.info(f"=====> Build summary_index from file!")
-            summary_index = SummaryIndex.from_documents(documents,service_context=service_context)
+            summary_index = SummaryIndex.from_documents(documents,service_context=service_context_tree_summary)
             summary_index.set_index_id(summary_index_name)
             summary_index.storage_context.persist()
 
@@ -262,8 +266,8 @@ def get_answer_from_llama_file_route_engine(messages, file):
     logging.info(prompt)
     vector_query_engine = vector_index.as_query_engine(text_qa_template=prompt, similarity_top_k=5)
     summary_query_engine = summary_index.as_query_engine(
-        response_mode="tree_summarize",
-        use_async=True,
+        response_mode="tree_summarize"
+        # use_async=True,
     )
 
     summary_tool = QueryEngineTool.from_defaults(
