@@ -265,6 +265,7 @@ def get_answer_from_llama_file_route_engine(messages, file):
     logging.info('=====> text_qa_template')
     logging.info(prompt)
     vector_query_engine = vector_index.as_query_engine(text_qa_template=prompt, similarity_top_k=5)
+    keyword_query_engine = keyword_index.as_query_engine(text_qa_template=prompt, similarity_top_k=5)
     summary_query_engine = summary_index.as_query_engine(
         response_mode="tree_summarize"
         # use_async=True,
@@ -287,7 +288,7 @@ def get_answer_from_llama_file_route_engine(messages, file):
     )
 
     keyword_tool = QueryEngineTool.from_defaults(
-        query_engine=vector_query_engine,
+        query_engine=keyword_query_engine,
         description=(
             "Useful for retrieving specific context using keywords from  the essay or the file on What"
             " I Worked On."
