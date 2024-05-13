@@ -1,4 +1,7 @@
 from dotenv import load_dotenv
+
+from app.github_reader import get_answer_from_github
+
 load_dotenv()
 
 
@@ -236,23 +239,29 @@ def bot_process(event, say, logger):
 
     # TODO: https://github.com/jerryjliu/llama_index/issues/778
     # if it can get the context_str, then put this prompt into the thread_message_history to provide more context to the chatGPT
-    use_route_engine = False
+    increase_timeout = False
     if file is not None:
         if channel == 'C0722NT9LQ7':
             logger.info("-- use router_query_engine  for file --")
             future = executor.submit(get_answer_from_llama_file_route_engine, dialog_context_keep_latest(thread_message_history[parent_thread_ts]['dialog_texts']), file)
-            use_route_engine = True
+            increase_timeout = True
         else:
             logger.info("-- use general query engine for file --")
             future = executor.submit(get_answer_from_llama_file, dialog_context_keep_latest(thread_message_history[parent_thread_ts]['dialog_texts']), file)
     elif len(urls) > 0:
         future = executor.submit(get_answer_from_llama_web, thread_message_history[parent_thread_ts]['dialog_texts'], list(urls))
     else:
-        future = executor.submit(get_answer_from_chatGPT, thread_message_history[parent_thread_ts]['dialog_texts'])
+        if channel == 'C07320RD8TF':
+            logger.info("-- use github index and data --")
+            future = executor.submit(get_answer_from_github, dialog_context_keep_latest(thread_message_history[parent_thread_ts]['dialog_texts']))
+            increase_timeout = True
+        else:
+            future = executor.submit(get_answer_from_chatGPT, thread_message_history[parent_thread_ts]['dialog_texts'])
+
 
     try:
         timeout = 300
-        if use_route_engine:
+        if increase_timeout:
             timeout = 2000
         gpt_response, total_llm_model_tokens, total_embedding_model_tokens = future.result(timeout=timeout)
         update_token_usage(event, total_llm_model_tokens, total_embedding_model_tokens)
