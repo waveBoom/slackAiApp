@@ -1,5 +1,6 @@
 import logging
 import os
+from functools import partial
 
 import tiktoken
 from llama_index.core import StorageContext, load_index_from_storage, VectorStoreIndex
@@ -18,8 +19,10 @@ model_name = "gpt-3.5-turbo"
 llm = OpenAI(model_name=model_name)
 github_client = GithubClient(github_token=github_token, verbose=True)
 github_storage_context = StorageContext.from_defaults()
+tokenizer = tiktoken.encoding_for_model(model_name).encode
+tokenizer = partial(tokenizer, disallowed_special=())
 token_counter = TokenCountingHandler(
-    tokenizer=tiktoken.encoding_for_model(model_name).encode(disallowed_special=())
+    tokenizer=tokenizer
 )
 
 
