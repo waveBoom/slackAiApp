@@ -19,7 +19,7 @@ llm = OpenAI(model_name=model_name)
 github_client = GithubClient(github_token=github_token, verbose=True)
 github_storage_context = StorageContext.from_defaults()
 token_counter = TokenCountingHandler(
-    tokenizer=tiktoken.encoding_for_model(model_name).encode
+    tokenizer=tiktoken.encoding_for_model(model_name).encode(disallowed_special=())
 )
 
 
