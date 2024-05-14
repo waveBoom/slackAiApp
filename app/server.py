@@ -1,10 +1,6 @@
 from dotenv import load_dotenv
-
-from app.github_reader import get_answer_from_github
-
 load_dotenv()
-
-
+from app.github_reader import get_answer_from_github
 import logging
 import re
 import os
