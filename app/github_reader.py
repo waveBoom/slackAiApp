@@ -17,10 +17,10 @@ branch = "master"
 
 model_name = "gpt-3.5-turbo"
 llm = OpenAI(model_name=model_name)
-github_client = GithubClient(github_token=github_token, verbose=True)
+github_client = GithubClient(github_token=github_token)
 github_storage_context = StorageContext.from_defaults()
-tokenizer = tiktoken.encoding_for_model(model_name).encode
-tokenizer = partial(tokenizer, disallowed_special=())
+enc = tiktoken.encoding_for_model(model_name)
+tokenizer = partial(enc.encode, allowed_special="all")
 token_counter = TokenCountingHandler(
     tokenizer=tokenizer
 )
