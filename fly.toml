@@ -12,7 +12,7 @@ kill_timeout = "5s"
 [env]
   PORT = "8080"
   OPENAI_API_BASE='https://openkey.cloud/v1'
-
+  OPENAI_BASE_URL='https://openkey.cloud/v1'
 
 [build]
     dockerfile="Dockerfile"
@@ -45,5 +45,5 @@ kill_timeout = "5s"
     restart_limit = 0
 
 [[vm]]
-  memory = "512mb"
+  memory = "1gb"
 

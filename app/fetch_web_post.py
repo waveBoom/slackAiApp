@@ -10,7 +10,6 @@ from youtube_transcript_api import YouTubeTranscriptApi
 
 CF_ACCESS_CLIENT_ID = os.environ.get('CF_ACCESS_CLIENT_ID')
 CF_ACCESS_CLIENT_SECRET = os.environ.get('CF_ACCESS_CLIENT_SECRET')
-
 PHANTOMJSCLOUD_API_KEY = os.environ.get('PHANTOMJSCLOUD_API_KEY')
 PHANTOMJSCLOUD_WEBSITES = ['https://twitter.com/', 'https://t.co/', 'https://medium.com/', 'https://app.mailbrew.com/', 'https://us12.campaign-archive.com',
                            'https://news.ycombinator.com', 'https://www.bloomberg.com', 'https://*.substack.com/*', 'https://*.1point3acres.com/*',
@@ -102,6 +101,6 @@ def get_youtube_transcript(video_id: str) -> str:
     return None
 
 
-if __name__ == '__main__':
-    text = scrape_website_by_phantomjscloud("https://zh.wikipedia.org/wiki/%E5%94%90%E7%B4%8D%C2%B7%E5%B7%9D%E6%99%AE")
-    print(text)
+# if __name__ == '__main__':
+#     text = scrape_website_by_phantomjscloud("https://time.com/6973136/kate-middleton-update-cancer-diagnosis-prince-william/")
+#     print(text)

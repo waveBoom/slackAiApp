@@ -1,4 +1,7 @@
 from dotenv import load_dotenv
+
+from app.github_reader import get_answer_from_github
+
 load_dotenv()
 
 
@@ -15,7 +18,7 @@ from slack_bolt.adapter.flask import SlackRequestHandler
 from slack_bolt.error import BoltUnhandledRequestError
 import concurrent.futures
 from app.daily_hot_news import build_all_news_block
-from app.gpt import get_answer_from_chatGPT, get_answer_from_llama_file, get_answer_from_llama_web, get_text_from_whisper, get_voice_file_from_text, index_cache_file_dir
+from app.gpt import get_answer_from_chatGPT, get_answer_from_llama_file, get_answer_from_llama_web, get_text_from_whisper, get_voice_file_from_text, index_cache_file_dir, get_answer_from_llama_file_route_engine
 from app.rate_limiter import RateLimiter
 from app.user import get_user, is_premium_user, is_active_user, update_message_token_usage
 from app.util import md5
@@ -236,15 +239,31 @@ def bot_process(event, say, logger):
 
     # TODO: https://github.com/jerryjliu/llama_index/issues/778
     # if it can get the context_str, then put this prompt into the thread_message_history to provide more context to the chatGPT
+    increase_timeout = False
     if file is not None:
-        future = executor.submit(get_answer_from_llama_file, dialog_context_keep_latest(thread_message_history[parent_thread_ts]['dialog_texts']), file)
+        if channel == 'C0722NT9LQ7':
+            logger.info("-- use router_query_engine  for file --")
+            future = executor.submit(get_answer_from_llama_file_route_engine, dialog_context_keep_latest(thread_message_history[parent_thread_ts]['dialog_texts']), file)
+            increase_timeout = True
+        else:
+            logger.info("-- use general query engine for file --")
+            future = executor.submit(get_answer_from_llama_file, dialog_context_keep_latest(thread_message_history[parent_thread_ts]['dialog_texts']), file)
     elif len(urls) > 0:
         future = executor.submit(get_answer_from_llama_web, thread_message_history[parent_thread_ts]['dialog_texts'], list(urls))
     else:
-        future = executor.submit(get_answer_from_chatGPT, thread_message_history[parent_thread_ts]['dialog_texts'])
+        if channel == 'C07320RD8TF':
+            logger.info("-- use github index and data --")
+            future = executor.submit(get_answer_from_github, dialog_context_keep_latest(thread_message_history[parent_thread_ts]['dialog_texts']))
+            increase_timeout = True
+        else:
+            future = executor.submit(get_answer_from_chatGPT, thread_message_history[parent_thread_ts]['dialog_texts'])
+
 
     try:
-        gpt_response, total_llm_model_tokens, total_embedding_model_tokens = future.result(timeout=300)
+        timeout = 300
+        if increase_timeout:
+            timeout = 2000
+        gpt_response, total_llm_model_tokens, total_embedding_model_tokens = future.result(timeout=timeout)
         update_token_usage(event, total_llm_model_tokens, total_embedding_model_tokens)
         update_thread_history(parent_thread_ts, 'chatGPT: %s' % insert_space(f'{gpt_response}'))
         logger.info(gpt_response)
@@ -262,6 +281,7 @@ def bot_process(event, say, logger):
     except Exception as e:
         print(f"An error occurred: {e}")
         logger.error(f"An error occurred: {e}")
+        logger.exception(f"An error occurred:")
         say(f'<@{user}>, {"内容被马斯克发到火星了,请查看发射日志😂"}', thread_ts=thread_ts)
 
 @slack_app.event("app_mention")

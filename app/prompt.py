@@ -1,5 +1,7 @@
 import logging
-from llama_index.prompts.prompts import QuestionAnswerPrompt
+from llama_index.core import PromptTemplate
+
+
 
 QUESTION_ANSWER_PROMPT_TMPL_CN = (
     "上下文信息如下所示： \n"
@@ -20,7 +22,7 @@ QUESTION_ANSWER_PROMPT_TMPL_EN = (
 def get_prompt_template(language='zh'):
     if language == 'en':
         logging.info('=====> Use English prompt template!')
-        return QuestionAnswerPrompt(QUESTION_ANSWER_PROMPT_TMPL_EN)
+        return PromptTemplate(QUESTION_ANSWER_PROMPT_TMPL_EN)
     else:
         logging.info('=====> Use Chinese prompt template!')
-        return QuestionAnswerPrompt(QUESTION_ANSWER_PROMPT_TMPL_CN)
+        return PromptTemplate(QUESTION_ANSWER_PROMPT_TMPL_CN)
