@@ -7,7 +7,7 @@ from llama_index.core.callbacks import TokenCountingHandler
 from llama_index.llms.openai import OpenAI
 from llama_index.readers.github import GithubRepositoryReader, GithubClient
 
-from app.gpt import remove_prompt_from_text
+from app.gpt import remove_prompt_from_text, format_dialog_messages
 
 github_token = os.environ.get("GITHUB_TOKEN")
 owner = "comfyanonymous"
@@ -26,6 +26,7 @@ token_counter = TokenCountingHandler(
 def get_answer_from_github(query_message):
     index_name = get_index_name_for_github(owner, repo)
     index = get_index_from_file_cache(index_name)
+    dialog_messages = format_dialog_messages(query_message)
     if index is None:
         documents = GithubRepositoryReader(
             github_client=github_client,
@@ -57,7 +58,7 @@ def get_answer_from_github(query_message):
 
     query_engine = index.as_query_engine(llm=llm)
     answer = query_engine.query(
-        query_message,
+        dialog_messages
         # verbose=True,
     )
     answer.response = remove_prompt_from_text(answer.response)
