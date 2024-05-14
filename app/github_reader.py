@@ -1,14 +1,10 @@
 import logging
 import os
-from functools import partial
-
-import tiktoken
 from llama_index.core import StorageContext, load_index_from_storage, VectorStoreIndex
-from llama_index.core.callbacks import TokenCountingHandler
 from llama_index.llms.openai import OpenAI
 from llama_index.readers.github import GithubRepositoryReader, GithubClient
 
-from app.gpt import remove_prompt_from_text, format_dialog_messages
+from app.gpt import remove_prompt_from_text, format_dialog_messages, token_counter
 
 github_token = os.environ.get("GITHUB_TOKEN")
 owner = "comfyanonymous"
@@ -19,11 +15,6 @@ model_name = "gpt-3.5-turbo"
 llm = OpenAI(model_name=model_name)
 github_client = GithubClient(github_token=github_token)
 github_storage_context = StorageContext.from_defaults()
-enc = tiktoken.encoding_for_model(model_name)
-tokenizer = partial(enc.encode, allowed_special="all")
-token_counter = TokenCountingHandler(
-    tokenizer=tokenizer
-)
 
 
 def get_answer_from_github(query_message):
