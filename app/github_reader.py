@@ -46,8 +46,7 @@ def get_answer_from_github(query_message):
                     ".gif",
                     ".svg",
                     ".ico",
-                    ".json",
-                    ".ipynb",
+                    ".ipynb"
                 ],
                 GithubRepositoryReader.FilterType.EXCLUDE,
             ),
