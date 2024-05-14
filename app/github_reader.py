@@ -34,10 +34,10 @@ def get_answer_from_github(query_message):
             repo=repo,
             use_parser=False,
             verbose=False,
-            filter_directories=(
-                ["docs"],
-                GithubRepositoryReader.FilterType.INCLUDE,
-            ),
+            # filter_directories=(
+            #     ["docs"],
+            #     GithubRepositoryReader.FilterType.INCLUDE,
+            # ),
             filter_file_extensions=(
                 [
                     ".png",
