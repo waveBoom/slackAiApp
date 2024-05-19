@@ -3,6 +3,8 @@ import logging
 import hashlib
 import random
 import uuid
+from functools import partial
+
 import tiktoken
 from pathlib import Path
 from azure.cognitiveservices.speech import SpeechConfig, SpeechSynthesizer, ResultReason, CancellationReason, \
@@ -58,8 +60,11 @@ service_context_tree_summary = ServiceContext.from_defaults(llm=llm_tree_summary
 web_storage_context = StorageContext.from_defaults()
 file_storage_context = StorageContext.from_defaults()
 
+enc = tiktoken.encoding_for_model(model_name)
+tokenizer = partial(enc.encode, allowed_special="all")
+Settings.tokenizer = tokenizer
 token_counter = TokenCountingHandler(
-    tokenizer=tiktoken.encoding_for_model(model_name).encode
+    tokenizer=tokenizer
 )
 Settings.callback_manager = CallbackManager([token_counter])
 

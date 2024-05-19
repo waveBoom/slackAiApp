@@ -1,13 +1,10 @@
 import logging
 import os
-
-import tiktoken
 from llama_index.core import StorageContext, load_index_from_storage, VectorStoreIndex
-from llama_index.core.callbacks import TokenCountingHandler
 from llama_index.llms.openai import OpenAI
 from llama_index.readers.github import GithubRepositoryReader, GithubClient
 
-from app.gpt import remove_prompt_from_text
+from app.gpt import remove_prompt_from_text, format_dialog_messages, token_counter
 
 github_token = os.environ.get("GITHUB_TOKEN")
 owner = "comfyanonymous"
@@ -16,16 +13,14 @@ branch = "master"
 
 model_name = "gpt-3.5-turbo"
 llm = OpenAI(model_name=model_name)
-github_client = GithubClient(github_token=github_token, verbose=True)
+github_client = GithubClient(github_token=github_token)
 github_storage_context = StorageContext.from_defaults()
-token_counter = TokenCountingHandler(
-    tokenizer=tiktoken.encoding_for_model(model_name).encode
-)
 
 
 def get_answer_from_github(query_message):
     index_name = get_index_name_for_github(owner, repo)
     index = get_index_from_file_cache(index_name)
+    dialog_messages = format_dialog_messages(query_message)
     if index is None:
         documents = GithubRepositoryReader(
             github_client=github_client,
@@ -33,10 +28,10 @@ def get_answer_from_github(query_message):
             repo=repo,
             use_parser=False,
             verbose=False,
-            filter_directories=(
-                ["docs"],
-                GithubRepositoryReader.FilterType.INCLUDE,
-            ),
+            # filter_directories=(
+            #     ["docs"],
+            #     GithubRepositoryReader.FilterType.INCLUDE,
+            # ),
             filter_file_extensions=(
                 [
                     ".png",
@@ -45,8 +40,7 @@ def get_answer_from_github(query_message):
                     ".gif",
                     ".svg",
                     ".ico",
-                    ".json",
-                    ".ipynb",
+                    ".ipynb"
                 ],
                 GithubRepositoryReader.FilterType.EXCLUDE,
             ),
@@ -57,7 +51,7 @@ def get_answer_from_github(query_message):
 
     query_engine = index.as_query_engine(llm=llm)
     answer = query_engine.query(
-        query_message,
+        dialog_messages
         # verbose=True,
     )
     answer.response = remove_prompt_from_text(answer.response)
